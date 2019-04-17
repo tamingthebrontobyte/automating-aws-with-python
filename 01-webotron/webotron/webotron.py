@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 from pathlib import Path
 import pathlib
 import mimetypes
+import os
 
 session = boto3.Session(profile_name='superuser')
 s3 = session.resource('s3')
@@ -59,7 +60,7 @@ def setup_bucket(bucket):
 
 def upload_file(s3_bucket, path, key):
     content_type = mimetypes.guess_type(key)[0] or 'text/plain'
-    key = str(pathlib.PureWindowsPath(key))
+    key = str(key).replace("\\", "/")
     s3_bucket.upload_file(
         path,
         key,
