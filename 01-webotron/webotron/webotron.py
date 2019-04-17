@@ -24,5 +24,33 @@ def list_bucket_objects(bucket):
     for obj in s3.Bucket(bucket).objects.all():
         print(obj)
 
+@cli.command('setup-bucket')
+@click.argument('bucket')
+def setup_bucket(bucket):
+    "Create and configure S3 bucket"
+    s3_bucket = s3.create_bucket(Bucket=bucket)
+    s3_bucket.upload_file('index.html', 'index.html', ExtraArgs={'ContentType': 'text/html'})
+    policy = """
+    {
+      "Version":"2012-10-17",
+      "Statement":[{
+        "Sid":"PublicReadGetObject",
+          "Effect":"Allow",
+          "Principal": "*",
+          "Action":["s3:GetObject"],
+          "Resource":["arn:aws:s3:::%s/*"
+          ]
+        }
+      ]
+    }
+    """ % s3_bucket.name
+    policy = policy.strip()
+    pol = s3_bucket.Policy()
+    pol.put(Policy=policy)
+    ws = s3_bucket.Website()
+    ws.put(WebsiteConfiguration={'ErrorDocument': { 'Key': 'error.html' }, 'IndexDocument': { 'Suffix': 'index.html'}})
+    url = "http://%s.s3-website-us-east-1.amazonaws.com" % s3_bucket.name
+    return
+
 if __name__ == '__main__':
     cli()
