@@ -15,6 +15,8 @@ class BucketManager:
         """Create a BucketManager object."""
         self.s3 = session.resource('s3')
 
+        self.manifest = {}
+
     def get_region_name(self, bucket):
         """Get the bucket's region name."""
         bucket_location = \
@@ -71,6 +73,13 @@ class BucketManager:
                 'Suffix': 'index.html'
                 }
             })
+
+    def load_manifest(self, bucket):
+        """Load manifest for caching purposes."""
+        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=bucket.name):
+            for obj in page.get('Contents', []):
+                self.manifest[obj['Key']] = obj['ETag']
 
     @staticmethod
     def upload_file(bucket, path, key):
